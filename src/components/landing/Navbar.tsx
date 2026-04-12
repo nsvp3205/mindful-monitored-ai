@@ -1,16 +1,14 @@
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Mic } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-            <Mic className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="VivaVoice" className="h-9 w-9 rounded-xl object-cover" />
           <span className="text-xl font-bold text-foreground">VivaVoice</span>
         </Link>
 

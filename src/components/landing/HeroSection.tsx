@@ -1,14 +1,20 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
-import heroImage from "@/assets/hero-illustration.jpg";
+import heroBg from "@/assets/hero-bg.jpg";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden pt-16" style={{ background: "var(--gradient-hero)" }}>
-      <div className="container flex flex-col items-center gap-12 py-20 md:flex-row md:py-28">
+    <section className="relative overflow-hidden pt-16">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img src={heroBg} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+      </div>
+
+      <div className="container relative flex flex-col items-center gap-12 py-20 md:flex-row md:py-28">
         <div className="flex-1 space-y-6 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse-soft" />
             AI-Powered Care Companion
           </div>
@@ -33,13 +39,7 @@ export function HeroSection() {
             </Button>
           </div>
         </div>
-        <div className="flex-1 flex justify-center">
-          <img
-            src={heroImage}
-            alt="Elderly person using VivaVoice AI companion"
-            className="w-full max-w-md rounded-3xl shadow-elevated"
-          />
-        </div>
+        <div className="flex-1" />
       </div>
     </section>
   );

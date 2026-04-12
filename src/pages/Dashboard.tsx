@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "@/assets/logo.jpg";
 import {
   LayoutDashboard,
   Bell,
@@ -108,9 +109,7 @@ const Dashboard = () => {
         }`}
       >
         <div className="flex h-16 items-center gap-2 border-b border-border px-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary flex-shrink-0">
-            <Mic className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="VivaVoice" className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
           {sidebarOpen && <span className="font-bold text-foreground">VivaVoice</span>}
         </div>
         <nav className="mt-4 space-y-1 px-2">

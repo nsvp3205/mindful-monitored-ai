@@ -3,8 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logo from "@/assets/logo.jpg";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -35,9 +36,7 @@ const Auth = () => {
           </div>
 
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
-              <Mic className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="VivaVoice" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
             <h1 className="text-2xl font-bold text-foreground">
               {isLogin ? "Welcome back" : "Create your account"}
             </h1>
