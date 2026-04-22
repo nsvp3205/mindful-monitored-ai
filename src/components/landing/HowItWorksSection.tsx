@@ -12,7 +12,7 @@ const steps = [
   {
     number: "03",
     title: "Daily Check-ins Begin",
-    description: "VivaVoice calls your loved one daily for friendly conversations and reminders.",
+    description: "Elara Voice calls your loved one daily for friendly conversations and reminders.",
   },
   {
     number: "04",
@@ -30,7 +30,7 @@ export function HowItWorksSection() {
             How it works
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Getting started with VivaVoice is simple and takes just minutes.
+            Getting started with Elara Voice is simple and takes just minutes.
           </p>
         </div>
         <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

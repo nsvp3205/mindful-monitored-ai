@@ -14,7 +14,7 @@ export function CtaSection() {
             Give your loved ones the care they deserve
           </h2>
           <p className="mt-4 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-            Join thousands of families who trust VivaVoice to keep their loved ones safe, connected, and cared for every single day.
+            Join thousands of families who trust Elara Voice to keep their loved ones safe, connected, and cared for every single day.
           </p>
           <Link to="/auth" className="mt-8 inline-block">
             <Button size="lg" variant="secondary" className="gap-2 px-8 font-semibold">

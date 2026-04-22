@@ -26,7 +26,7 @@ export function HeroSection() {
             again
           </h1>
           <p className="max-w-lg text-lg text-muted-foreground">
-            VivaVoice is an AI voice companion that provides daily check-ins, medication reminders, and emotional support for elderly loved ones — giving you peace of mind.
+            Elara Voice is an AI voice companion that provides daily check-ins, medication reminders, and emotional support for elderly loved ones — giving you peace of mind.
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row md:justify-start">
             <Link to="/auth">

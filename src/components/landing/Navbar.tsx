@@ -8,8 +8,8 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="VivaVoice" className="h-9 w-9 rounded-xl object-cover" />
-          <span className="text-xl font-bold text-foreground">VivaVoice</span>
+          <img src={logo} alt="Elara Voice" className="h-9 w-9 rounded-xl object-cover" />
+          <span className="text-xl font-bold text-foreground">Elara Voice</span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">

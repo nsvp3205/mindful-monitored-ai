@@ -109,8 +109,8 @@ const Dashboard = () => {
         }`}
       >
         <div className="flex h-16 items-center gap-2 border-b border-border px-4">
-          <img src={logo} alt="VivaVoice" className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
-          {sidebarOpen && <span className="font-bold text-foreground">VivaVoice</span>}
+          <img src={logo} alt="Elara Voice" className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
+          {sidebarOpen && <span className="font-bold text-foreground">Elara Voice</span>}
         </div>
         <nav className="mt-4 space-y-1 px-2">
           {navItems.map((item) => (
