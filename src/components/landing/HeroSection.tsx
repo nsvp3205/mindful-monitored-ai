@@ -14,19 +14,18 @@ export function HeroSection() {
 
       <div className="container relative flex flex-col items-center gap-12 py-20 md:flex-row md:py-28">
         <div className="flex-1 space-y-6 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-            <span className="h-2 w-2 rounded-full bg-primary animate-pulse-soft" />
-            AI-Powered Care Companion
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent">
+            <span className="h-2 w-2 rounded-full bg-accent animate-pulse-soft" />
+            A caring voice, always there
           </div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Your loved one is{" "}
+            A caring voice that{" "}
             <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
-              never alone
-            </span>{" "}
-            again
+              checks in, reminds, and listens
+            </span>
           </h1>
           <p className="max-w-lg text-lg text-muted-foreground">
-            VivaVoice is an AI voice companion that provides daily check-ins, medication reminders, and emotional support for elderly loved ones — giving you peace of mind.
+            Elara Voice is a gentle AI companion that calls your loved ones each day — for friendly conversation, medication reminders, and instant family alerts when something needs attention.
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row md:justify-start">
             <Link to="/auth">

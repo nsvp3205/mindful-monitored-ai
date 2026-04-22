@@ -36,12 +36,12 @@ const Auth = () => {
           </div>
 
           <div className="text-center space-y-2">
-            <img src={logo} alt="VivaVoice" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
+            <img src={logo} alt="Elara Voice" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
             <h1 className="text-2xl font-bold text-foreground">
               {isLogin ? "Welcome back" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
-              {isLogin ? "Sign in to your VivaVoice account" : "Start caring for your loved ones today"}
+              {isLogin ? "Sign in to your Elara Voice account" : "Start caring for your loved ones today"}
             </p>
           </div>
 
