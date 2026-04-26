@@ -14,11 +14,13 @@ import {
   Clock,
   Mic,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
+import { LogOut } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +73,12 @@ const navItems: { key: NavSection; label: string; icon: typeof LayoutDashboard }
 ];
 
 const Dashboard = () => {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
   const [activeSection, setActiveSection] = useState<NavSection>("overview");
   const [reminders, setReminders] = useState(initialReminders);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -148,6 +156,9 @@ const Dashboard = () => {
             <Link to="/">
               <Button variant="ghost" size="sm">Home</Button>
             </Link>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sign out
+            </Button>
           </div>
         </header>
 
