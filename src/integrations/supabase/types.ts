@@ -14,16 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          resolved: boolean
+          severity: Database["public"]["Enums"]["alert_severity"]
+          type: Database["public"]["Enums"]["alert_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          resolved?: boolean
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          type: Database["public"]["Enums"]["alert_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          resolved?: boolean
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          type?: Database["public"]["Enums"]["alert_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      caregiver_links: {
+        Row: {
+          caregiver_id: string
+          created_at: string
+          elderly_id: string
+          id: string
+          status: Database["public"]["Enums"]["link_status"]
+          updated_at: string
+        }
+        Insert: {
+          caregiver_id: string
+          created_at?: string
+          elderly_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["link_status"]
+          updated_at?: string
+        }
+        Update: {
+          caregiver_id?: string
+          created_at?: string
+          elderly_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["link_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      check_ins: {
+        Row: {
+          created_at: string
+          id: string
+          mood: Database["public"]["Enums"]["mood_type"]
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mood: Database["public"]["Enums"]["mood_type"]
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mood?: Database["public"]["Enums"]["mood_type"]
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      medication_logs: {
+        Row: {
+          id: string
+          medication_id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["med_log_status"]
+          taken_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          medication_id: string
+          notes?: string | null
+          status: Database["public"]["Enums"]["med_log_status"]
+          taken_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["med_log_status"]
+          taken_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          active: boolean
+          created_at: string
+          dosage: string | null
+          id: string
+          name: string
+          notes: string | null
+          schedule_times: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dosage?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          schedule_times?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dosage?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          schedule_times?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_linked_caregiver: {
+        Args: { _caregiver: string; _elderly: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      alert_severity: "info" | "warning" | "critical"
+      alert_type: "missed_medication" | "emergency" | "low_mood" | "no_checkin"
+      app_role: "admin" | "caregiver" | "elderly"
+      link_status: "pending" | "accepted" | "rejected"
+      med_log_status: "taken" | "missed" | "skipped"
+      mood_type: "great" | "good" | "okay" | "low" | "bad"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +364,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_severity: ["info", "warning", "critical"],
+      alert_type: ["missed_medication", "emergency", "low_mood", "no_checkin"],
+      app_role: ["admin", "caregiver", "elderly"],
+      link_status: ["pending", "accepted", "rejected"],
+      med_log_status: ["taken", "missed", "skipped"],
+      mood_type: ["great", "good", "okay", "low", "bad"],
+    },
   },
 } as const
