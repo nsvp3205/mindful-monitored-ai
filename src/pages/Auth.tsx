@@ -10,8 +10,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.jpg";
 
+type Mode = "login" | "signup" | "forgot";
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -31,7 +33,7 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isLogin) {
+      if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
@@ -39,7 +41,7 @@ const Auth = () => {
         if (error) throw error;
         toast({ title: "Welcome back" });
         navigate("/dashboard", { replace: true });
-      } else {
+      } else if (mode === "signup") {
         const redirectUrl = `${window.location.origin}/dashboard`;
         const { error } = await supabase.auth.signUp({
           email: formData.email,
@@ -56,6 +58,15 @@ const Auth = () => {
         if (error) throw error;
         toast({ title: "Account created", description: "You're signed in." });
         navigate("/dashboard", { replace: true });
+      } else {
+        const redirectTo = `${window.location.origin}/reset-password`;
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo });
+        if (error) throw error;
+        toast({
+          title: "Check your inbox",
+          description: "We sent you a password reset link.",
+        });
+        setMode("login");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
@@ -64,6 +75,13 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const titles: Record<Mode, { h: string; sub: string; cta: string }> = {
+    login: { h: "Welcome back", sub: "Sign in to your Elara Voice account", cta: "Sign In" },
+    signup: { h: "Create your account", sub: "Start caring for your loved ones today", cta: "Create Account" },
+    forgot: { h: "Reset your password", sub: "Enter your email and we'll send you a reset link", cta: "Send reset link" },
+  };
+  const t = titles[mode];
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--gradient-hero)" }}>
@@ -78,17 +96,13 @@ const Auth = () => {
 
           <div className="text-center space-y-2">
             <img src={logo} alt="Elara Voice" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
-            <h1 className="text-2xl font-bold text-foreground">
-              {isLogin ? "Welcome back" : "Create your account"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isLogin ? "Sign in to your Elara Voice account" : "Start caring for your loved ones today"}
-            </p>
+            <h1 className="text-2xl font-bold text-foreground">{t.h}</h1>
+            <p className="text-muted-foreground">{t.sub}</p>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-8 shadow-elevated">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
+              {mode === "signup" && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -112,20 +126,33 @@ const Auth = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
+              {mode !== "forgot" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => setMode("forgot")}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                </div>
+              )}
 
-              {!isLogin && (
+              {mode === "signup" && (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
@@ -161,17 +188,26 @@ const Auth = () => {
               )}
 
               <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign In" : "Create Account"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.cta}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-primary hover:underline"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
+            <div className="mt-6 text-center space-y-2">
+              {mode === "login" && (
+                <button onClick={() => setMode("signup")} className="text-sm text-primary hover:underline">
+                  Don't have an account? Sign up
+                </button>
+              )}
+              {mode === "signup" && (
+                <button onClick={() => setMode("login")} className="text-sm text-primary hover:underline">
+                  Already have an account? Sign in
+                </button>
+              )}
+              {mode === "forgot" && (
+                <button onClick={() => setMode("login")} className="text-sm text-primary hover:underline">
+                  Back to sign in
+                </button>
+              )}
             </div>
           </div>
         </div>
