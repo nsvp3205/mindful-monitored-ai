@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.jpg";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,11 +21,48 @@ const Auth = () => {
     role: "caregiver" as "elderly" | "caregiver",
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) navigate("/dashboard", { replace: true });
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // MVP: simulate login, navigate to dashboard
-    navigate("/dashboard");
+    setLoading(true);
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (error) throw error;
+        toast({ title: "Welcome back" });
+        navigate("/dashboard", { replace: true });
+      } else {
+        const redirectUrl = `${window.location.origin}/dashboard`;
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: formData.name,
+              phone: formData.phone,
+              role: formData.role,
+            },
+          },
+        });
+        if (error) throw error;
+        toast({ title: "Account created", description: "You're signed in." });
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      toast({ title: "Authentication error", description: message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +105,7 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
+                  required
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -75,6 +117,8 @@ const Auth = () => {
                 <Input
                   id="password"
                   type="password"
+                  required
+                  minLength={6}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -116,8 +160,8 @@ const Auth = () => {
                 </>
               )}
 
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                {isLogin ? "Sign In" : "Create Account"}
+              <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign In" : "Create Account"}
               </Button>
             </form>
 
