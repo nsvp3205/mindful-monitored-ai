@@ -17,18 +17,24 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // When the user clicks the email link, Supabase parses the recovery token
-    // from the URL hash and emits a PASSWORD_RECOVERY event with a temp session.
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
         setReady(true);
       }
     });
-    // Also check existing session in case the event fired before mount
+
+    // Fallback: if a session already exists (link processed before mount), allow reset
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setReady(true);
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Safety timeout — if nothing happens in 4s, show the form anyway so user isn't stuck
+    const t = setTimeout(() => setReady(true), 4000);
+
+    return () => {
+      sub.subscription.unsubscribe();
+      clearTimeout(t);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
