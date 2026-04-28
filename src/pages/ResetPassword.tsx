@@ -9,27 +9,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.jpg";
 
+type Status = "verifying" | "ready" | "invalid";
+
 const ResetPassword = () => {
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<Status>("verifying");
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
+    let resolved = false;
+    const markReady = () => {
+      resolved = true;
+      setStatus("ready");
+    };
+
+    // Listen for Supabase to process the recovery token from the URL hash
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
-        setReady(true);
+        markReady();
       }
     });
 
-    // Fallback: if a session already exists (link processed before mount), allow reset
+    // Fallback: if a session already exists, allow reset
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
+      if (session) markReady();
     });
 
-    // Safety timeout — if nothing happens in 4s, show the form anyway so user isn't stuck
-    const t = setTimeout(() => setReady(true), 4000);
+    // If still no session after 5s, the link is invalid/expired
+    const t = setTimeout(() => {
+      if (!resolved) setStatus("invalid");
+    }, 5000);
 
     return () => {
       sub.subscription.unsubscribe();
@@ -47,6 +58,19 @@ const ResetPassword = () => {
       toast({ title: "Passwords don't match", variant: "destructive" });
       return;
     }
+
+    // Guard: ensure we actually have a session before calling updateUser
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setStatus("invalid");
+      toast({
+        title: "Reset link expired",
+        description: "Please request a new password reset email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
@@ -76,16 +100,33 @@ const ResetPassword = () => {
             <img src={logo} alt="Elara Voice" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
             <h1 className="text-2xl font-bold text-foreground">Set a new password</h1>
             <p className="text-muted-foreground">
-              {ready ? "Choose a strong password you'll remember." : "Verifying your reset link…"}
+              {status === "verifying" && "Verifying your reset link…"}
+              {status === "ready" && "Choose a strong password you'll remember."}
+              {status === "invalid" && "This reset link is invalid or has already been used."}
             </p>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-8 shadow-elevated">
-            {!ready ? (
+            {status === "verifying" && (
               <div className="flex justify-center py-6">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : (
+            )}
+
+            {status === "invalid" && (
+              <div className="space-y-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Reset links can only be used once and expire after a short time. Request a new one to continue.
+                </p>
+                <Link to="/auth">
+                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    Request new reset link
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {status === "ready" && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">New password</Label>
