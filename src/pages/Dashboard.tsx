@@ -152,6 +152,11 @@ const Dashboard = () => {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-lg">
           <h1 className="text-xl font-bold text-foreground capitalize">{activeSection}</h1>
           <div className="flex items-center gap-3">
+            <Link to="/checkin">
+              <Button size="sm" className="gap-2 bg-primary text-primary-foreground">
+                <Mic className="h-4 w-4" /> Start Check-in
+              </Button>
+            </Link>
             <ThemeToggle />
             <Link to="/">
               <Button variant="ghost" size="sm">Home</Button>
