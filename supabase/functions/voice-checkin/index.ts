@@ -23,8 +23,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const NVIDIA_API_KEY = Deno.env.get("NVIDIA_API_KEY");
-    if (!NVIDIA_API_KEY) throw new Error("NVIDIA_API_KEY not configured");
+    const NVIDIA_LLM_API_KEY =
+      Deno.env.get("NVIDIA_LLM_API_KEY") ?? Deno.env.get("NVIDIA_API_KEY");
+    if (!NVIDIA_LLM_API_KEY) throw new Error("NVIDIA_LLM_API_KEY not configured");
 
     // Auth
     const authHeader = req.headers.get("Authorization");
