@@ -111,58 +111,37 @@ const VoiceCheckIn = () => {
     }
   }
 
-  const startListening = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
-      audioChunksRef.current = [];
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        setListening(false);
-        const blob = new Blob(audioChunksRef.current, { type: mime });
-        if (blob.size < 1000) {
-          toast.error("Didn't catch that — try again.");
-          return;
-        }
-        setTranscribing(true);
-        try {
-          const base64 = await blobToBase64(blob);
-          const { data, error } = await supabase.functions.invoke("speech-to-text", {
-            body: { audio: base64, mimeType: mime },
-          });
-          if (error) throw error;
-          const transcript = (data?.text ?? "").trim();
-          if (!transcript) {
-            toast.error("Couldn't understand audio.");
-            return;
-          }
-          const next: Msg[] = [...messages, { role: "user", content: transcript }];
-          setMessages(next);
-          const userTurns = next.filter((m) => m.role === "user").length;
-          await sendToAssistant(next, userTurns >= 4);
-        } catch (e: any) {
-          toast.error(e?.message ?? "Transcription failed");
-        } finally {
-          setTranscribing(false);
-        }
-      };
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-      setListening(true);
-    } catch (e: any) {
-      toast.error("Microphone access denied");
+  const recognitionRef = useRef<any>(null);
+  const supportsSTT =
+    typeof window !== "undefined" &&
+    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const startListening = () => {
+    if (!supportsSTT) {
+      toast.error("Voice input isn't supported in this browser. Try Chrome.");
+      return;
     }
+    const SR =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onstart = () => setListening(true);
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    rec.onresult = async (e: any) => {
+      const transcript = e.results[0][0].transcript as string;
+      const next: Msg[] = [...messages, { role: "user", content: transcript }];
+      setMessages(next);
+      const userTurns = next.filter((m) => m.role === "user").length;
+      await sendToAssistant(next, userTurns >= 4);
+    };
+    recognitionRef.current = rec;
+    rec.start();
   };
 
-  const stopListening = () => {
-    mediaRecorderRef.current?.stop();
-  };
+  const stopListening = () => recognitionRef.current?.stop?.();
 
   const busy = thinking || speaking || transcribing;
 
