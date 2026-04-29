@@ -156,10 +156,10 @@ const VoiceCheckIn = () => {
               <p className="text-sm">{m.content}</p>
             </div>
           ))}
-          {(thinking || transcribing) && (
+          {thinking && (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {transcribing ? "Transcribing…" : "Elara is thinking…"}
+              Elara is thinking…
             </div>
           )}
         </div>
