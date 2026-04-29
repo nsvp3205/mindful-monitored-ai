@@ -128,7 +128,7 @@ const VoiceCheckIn = () => {
 
   const stopListening = () => recognitionRef.current?.stop?.();
 
-  const busy = thinking || speaking || transcribing;
+  const busy = thinking || speaking;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
