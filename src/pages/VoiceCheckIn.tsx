@@ -193,8 +193,6 @@ const VoiceCheckIn = () => {
                 ? "Elara is speaking…"
                 : listening
                 ? "Listening… tap to stop"
-                : transcribing
-                ? "Transcribing…"
                 : thinking
                 ? "Thinking…"
                 : "Tap to talk"}
