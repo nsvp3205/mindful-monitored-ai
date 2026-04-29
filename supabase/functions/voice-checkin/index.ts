@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${NVIDIA_API_KEY}`,
+          Authorization: `Bearer ${NVIDIA_LLM_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
