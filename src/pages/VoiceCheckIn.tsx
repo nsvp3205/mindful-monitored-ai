@@ -9,34 +9,19 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const moodEmoji: Record<string, string> = { happy: "😊", neutral: "😐", sad: "😢" };
 
-const blobToBase64 = (blob: Blob) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      resolve(result.split(",")[1] ?? "");
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-
 const VoiceCheckIn = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [listening, setListening] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
   const [finalMood, setFinalMood] = useState<string | null>(null);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     void greet();
     return () => {
-      mediaRecorderRef.current?.stream?.getTracks().forEach((t) => t.stop());
       window.speechSynthesis?.cancel();
       if (audioElRef.current) {
         audioElRef.current.pause();
