@@ -9,52 +9,90 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const moodEmoji: Record<string, string> = { happy: "😊", neutral: "😐", sad: "😢" };
 
+const blobToBase64 = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
 const VoiceCheckIn = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [listening, setListening] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [finalMood, setFinalMood] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
-  const supportsSTT =
-    typeof window !== "undefined" &&
-    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Greet on mount
-    void sendToAssistant([], "Hi! I'm Elara. Ready for today's check-in?");
+    void greet();
     return () => {
+      mediaRecorderRef.current?.stream?.getTracks().forEach((t) => t.stop());
       window.speechSynthesis?.cancel();
-      recognitionRef.current?.stop?.();
+      if (audioElRef.current) {
+        audioElRef.current.pause();
+        audioElRef.current.src = "";
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const speak = (text: string) =>
-    new Promise<void>((resolve) => {
+  async function greet() {
+    const greeting = "Hi! I'm Elara. Ready for today's check-in?";
+    setMessages([{ role: "assistant", content: greeting }]);
+    await speak(greeting);
+  }
+
+  // Try NVIDIA TTS first; fall back to browser speechSynthesis.
+  async function speak(text: string): Promise<void> {
+    setSpeaking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("text-to-speech", {
+        body: { text },
+      });
+      if (error || !data?.audio) throw error ?? new Error("no audio");
+      await playBase64Audio(data.audio, data.mimeType ?? "audio/wav");
+    } catch (e) {
+      console.warn("TTS fallback to browser:", e);
+      await browserSpeak(text);
+    } finally {
+      setSpeaking(false);
+    }
+  }
+
+  function playBase64Audio(b64: string, mimeType: string): Promise<void> {
+    return new Promise((resolve) => {
+      const src = `data:${mimeType};base64,${b64}`;
+      const audio = audioElRef.current ?? new Audio();
+      audioElRef.current = audio;
+      audio.src = src;
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    });
+  }
+
+  function browserSpeak(text: string): Promise<void> {
+    return new Promise((resolve) => {
       if (!("speechSynthesis" in window)) return resolve();
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 0.95;
-      u.pitch = 1;
-      u.onend = () => {
-        setSpeaking(false);
-        resolve();
-      };
-      u.onerror = () => {
-        setSpeaking(false);
-        resolve();
-      };
-      setSpeaking(true);
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
       window.speechSynthesis.speak(u);
     });
+  }
 
-  async function sendToAssistant(history: Msg[], seedGreeting?: string, finalize = false) {
-    if (seedGreeting) {
-      setMessages([{ role: "assistant", content: seedGreeting }]);
-      await speak(seedGreeting);
-      return;
-    }
+  async function sendToAssistant(history: Msg[], finalize = false) {
     setThinking(true);
     try {
       const { data, error } = await supabase.functions.invoke("voice-checkin", {
@@ -73,31 +111,60 @@ const VoiceCheckIn = () => {
     }
   }
 
-  const startListening = () => {
-    if (!supportsSTT) {
-      toast.error("Voice input isn't supported in this browser. Try Chrome.");
-      return;
+  const startListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setListening(false);
+        const blob = new Blob(audioChunksRef.current, { type: mime });
+        if (blob.size < 1000) {
+          toast.error("Didn't catch that — try again.");
+          return;
+        }
+        setTranscribing(true);
+        try {
+          const base64 = await blobToBase64(blob);
+          const { data, error } = await supabase.functions.invoke("speech-to-text", {
+            body: { audio: base64, mimeType: mime },
+          });
+          if (error) throw error;
+          const transcript = (data?.text ?? "").trim();
+          if (!transcript) {
+            toast.error("Couldn't understand audio.");
+            return;
+          }
+          const next: Msg[] = [...messages, { role: "user", content: transcript }];
+          setMessages(next);
+          const userTurns = next.filter((m) => m.role === "user").length;
+          await sendToAssistant(next, userTurns >= 4);
+        } catch (e: any) {
+          toast.error(e?.message ?? "Transcription failed");
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setListening(true);
+    } catch (e: any) {
+      toast.error("Microphone access denied");
     }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    rec.onstart = () => setListening(true);
-    rec.onerror = () => setListening(false);
-    rec.onend = () => setListening(false);
-    rec.onresult = async (e: any) => {
-      const transcript = e.results[0][0].transcript as string;
-      const next: Msg[] = [...messages, { role: "user", content: transcript }];
-      setMessages(next);
-      const userTurns = next.filter((m) => m.role === "user").length;
-      await sendToAssistant(next, undefined, userTurns >= 4);
-    };
-    recognitionRef.current = rec;
-    rec.start();
   };
 
-  const stopListening = () => recognitionRef.current?.stop?.();
+  const stopListening = () => {
+    mediaRecorderRef.current?.stop();
+  };
+
+  const busy = thinking || speaking || transcribing;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -112,7 +179,6 @@ const VoiceCheckIn = () => {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-between p-6 max-w-2xl mx-auto w-full">
-        {/* Conversation */}
         <div className="flex-1 w-full overflow-y-auto space-y-4 py-6">
           {messages.map((m, i) => (
             <div
@@ -126,34 +192,30 @@ const VoiceCheckIn = () => {
               <p className="text-sm">{m.content}</p>
             </div>
           ))}
-          {thinking && (
+          {(thinking || transcribing) && (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> Elara is thinking…
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {transcribing ? "Transcribing…" : "Elara is thinking…"}
             </div>
           )}
         </div>
 
-        {/* Mood result */}
         {finalMood && (
           <div className="w-full rounded-2xl border border-border bg-card p-6 mb-4 text-center">
             <p className="text-sm text-muted-foreground">Today's mood logged</p>
             <p className="text-5xl my-2">{moodEmoji[finalMood]}</p>
             <p className="text-sm capitalize font-medium">{finalMood}</p>
-            <Button
-              className="mt-4 gap-2"
-              onClick={() => navigate("/dashboard")}
-            >
+            <Button className="mt-4 gap-2" onClick={() => navigate("/dashboard")}>
               <Check className="h-4 w-4" /> Done
             </Button>
           </div>
         )}
 
-        {/* Mic button */}
         {!finalMood && (
           <div className="flex flex-col items-center gap-3 pb-4">
             <button
               onClick={listening ? stopListening : startListening}
-              disabled={thinking || speaking}
+              disabled={busy}
               className={`h-24 w-24 rounded-full flex items-center justify-center transition-all shadow-lg ${
                 listening
                   ? "bg-destructive text-destructive-foreground animate-pulse scale-110"
@@ -167,6 +229,8 @@ const VoiceCheckIn = () => {
                 ? "Elara is speaking…"
                 : listening
                 ? "Listening… tap to stop"
+                : transcribing
+                ? "Transcribing…"
                 : thinking
                 ? "Thinking…"
                 : "Tap to talk"}
